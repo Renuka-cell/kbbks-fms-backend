@@ -12,6 +12,21 @@ class VendorController extends BaseController
      */
     public function index()
     {
+        if (!$this->checkToken()) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Unauthorized access'
+            ]);
+        }
+
+        // All roles allowed
+        if (!$this->checkRole(['Admin', 'Accountant', 'Viewer'])) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Access denied'
+            ]);
+        }
+
         $model = new VendorModel();
         return $this->response->setJSON($model->findAll());
     }
@@ -22,6 +37,21 @@ class VendorController extends BaseController
      */
     public function create()
     {
+        if (!$this->checkToken()) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Unauthorized access'
+            ]);
+        }
+
+        // Admin & Accountant only
+        if (!$this->checkRole(['Admin', 'Accountant'])) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Access denied'
+            ]);
+        }
+
         $model = new VendorModel();
 
         $data = [
@@ -51,6 +81,21 @@ class VendorController extends BaseController
      */
     public function update($id)
     {
+        if (!$this->checkToken()) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Unauthorized access'
+            ]);
+        }
+
+        // Admin & Accountant only
+        if (!$this->checkRole(['Admin', 'Accountant'])) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Access denied'
+            ]);
+        }
+
         $model = new VendorModel();
 
         $data = [
@@ -80,6 +125,21 @@ class VendorController extends BaseController
      */
     public function delete($id)
     {
+        if (!$this->checkToken()) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Unauthorized access'
+            ]);
+        }
+
+        // Admin only
+        if (!$this->checkRole(['Admin'])) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Access denied'
+            ]);
+        }
+
         $model = new VendorModel();
 
         if ($model->delete($id)) {
