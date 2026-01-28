@@ -29,7 +29,7 @@ $routes->set404Override();
 // Home route (test route)
 $routes->get('/', 'Home::index');
 
-<<<<<<< HEAD
+
 /*
 |--------------------------------------------------------------------------
 | AUTH ROUTES (Login / Registration)
@@ -43,9 +43,9 @@ $routes->post('auth/register', 'AuthController::register');
 | VENDOR ROUTES (CRUD)
 |--------------------------------------------------------------------------
 */
-=======
+
 // Vendor routes (CRUD)
->>>>>>> 98699a7f9426dba0803b665f6c55731e429988d3
+
 $routes->group('vendors', function ($routes) {
 
     // READ: Fetch all vendors
@@ -61,7 +61,7 @@ $routes->group('vendors', function ($routes) {
     $routes->get('delete/(:num)', 'VendorController::delete/$1');
 
 });
-<<<<<<< HEAD
+
 
 /*
 |--------------------------------------------------------------------------
@@ -80,5 +80,4 @@ $routes->group('reports', function ($routes) {
     $routes->get('income-expense', 'ReportController::incomeExpense');
 
 });
-=======
->>>>>>> 98699a7f9426dba0803b665f6c55731e429988d3
+
