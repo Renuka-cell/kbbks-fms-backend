@@ -6,7 +6,6 @@ use Config\Services;
 /**
  * @var RouteCollection $routes
  */
-
 $routes = Services::routes();
 
 /*
@@ -22,62 +21,85 @@ $routes->set404Override();
 
 /*
 |--------------------------------------------------------------------------
-| Route Definitions
+| Basic Routes
 |--------------------------------------------------------------------------
 */
-
-// Home route (test route)
 $routes->get('/', 'Home::index');
 
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES
+|--------------------------------------------------------------------------
+*/
+$routes->group('auth', function ($routes) {
+
+    $routes->post('login', 'AuthController::login');
+    $routes->post('register', 'AuthController::register');
+
+});
 
 /*
 |--------------------------------------------------------------------------
-| AUTH ROUTES (Login / Registration)
+| VENDOR ROUTES
 |--------------------------------------------------------------------------
 */
-$routes->post('auth/login', 'AuthController::login');
-$routes->post('auth/register', 'AuthController::register');
-
-/*
-|--------------------------------------------------------------------------
-| VENDOR ROUTES (CRUD)
-|--------------------------------------------------------------------------
-*/
-
-// Vendor routes (CRUD)
-
 $routes->group('vendors', function ($routes) {
 
-    // READ: Fetch all vendors
-    $routes->get('/', 'VendorController::index');
-
-    // CREATE: Add new vendor
-    $routes->post('create', 'VendorController::create');
-
-    // UPDATE: Update vendor by ID
+    $routes->get('/', 'VendorController::index');          // List vendors
+    $routes->post('create', 'VendorController::create');  // Create vendor
     $routes->post('update/(:num)', 'VendorController::update/$1');
-
-    // DELETE: Delete vendor by ID
     $routes->get('delete/(:num)', 'VendorController::delete/$1');
 
 });
 
+/*
+|--------------------------------------------------------------------------
+| BILL ROUTES
+|--------------------------------------------------------------------------
+*/
+$routes->group('bills', function ($routes) {
+
+    $routes->post('create', 'BillController::create');    // Create bill
+    // $routes->get('/', 'BillController::index');        // (Optional) list bills
+
+});
 
 /*
 |--------------------------------------------------------------------------
-| REPORT ROUTES (Reporting APIs)
+| EXPENSE ROUTES
+|--------------------------------------------------------------------------
+*/
+$routes->group('expenses', function ($routes) {
+
+    $routes->post('create', 'ExpenseController::create'); // Add expense
+    // $routes->get('/', 'ExpenseController::index');     // (Optional) list expenses
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| PAYMENT ROUTES
+|--------------------------------------------------------------------------
+*/
+$routes->group('payments', function ($routes) {
+
+    $routes->post('create', 'PaymentController::create'); // Add payment
+    // $routes->get('/', 'PaymentController::index');     // (Optional) list payments
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| REPORT ROUTES
 |--------------------------------------------------------------------------
 */
 $routes->group('reports', function ($routes) {
 
-    // Monthly Expense Report
-    $routes->get('monthly-expense', 'ReportController::monthlyExpense');
-
-    // Vendor Outstanding Report
+    // ✅ Vendor Outstanding Report
     $routes->get('vendor-outstanding', 'ReportController::vendorOutstanding');
 
-    // Income vs Expense Summary
+    // Other reports
+    $routes->get('monthly-expense', 'ReportController::monthlyExpense');
     $routes->get('income-expense', 'ReportController::incomeExpense');
 
 });
-

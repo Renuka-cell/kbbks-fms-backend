@@ -18,17 +18,16 @@ class AuthController extends BaseController
 
         if (!$data['name'] || !$data['email'] || !$this->request->getPost('password') || !$data['role']) {
             return $this->response->setJSON([
-                'status' => 'error',
+                'status'  => false,
                 'message' => 'All fields are required'
             ]);
         }
 
         $userModel = new UserModel();
 
-        // Check if email already exists
         if ($userModel->where('email', $data['email'])->first()) {
             return $this->response->setJSON([
-                'status' => 'error',
+                'status'  => false,
                 'message' => 'Email already registered'
             ]);
         }
@@ -36,7 +35,7 @@ class AuthController extends BaseController
         $userModel->insert($data);
 
         return $this->response->setJSON([
-            'status' => 'success',
+            'status'  => true,
             'message' => 'User registered successfully'
         ]);
     }
@@ -44,12 +43,12 @@ class AuthController extends BaseController
     // LOGIN USER
     public function login()
     {
-        $email = $this->request->getPost('email');
+        $email    = $this->request->getPost('email');
         $password = $this->request->getPost('password');
 
         if (!$email || !$password) {
             return $this->response->setJSON([
-                'status' => 'error',
+                'status'  => false,
                 'message' => 'Email and password are required'
             ]);
         }
@@ -59,16 +58,20 @@ class AuthController extends BaseController
 
         if (!$user || !password_verify($password, $user['password'])) {
             return $this->response->setJSON([
-                'status' => 'error',
+                'status'  => false,
                 'message' => 'Invalid email or password'
             ]);
         }
 
-        // Simple token for Phase-1
-        $token = bin2hex(random_bytes(16));
+        // Generate and store token
+        $token = bin2hex(random_bytes(32));
+
+        $userModel->update($user['user_id'], [
+            'token' => $token
+        ]);
 
         return $this->response->setJSON([
-            'status' => 'success',
+            'status' => true,
             'message' => 'Login successful',
             'token' => $token,
             'role' => $user['role']

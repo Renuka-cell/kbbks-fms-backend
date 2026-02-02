@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <?php
 
 namespace App\Controllers;
@@ -10,248 +9,148 @@ class VendorController extends BaseController
     /**
      * READ: Fetch all vendors
      * URL: GET /vendors
+     * Roles: Admin, Accountant, Viewer
      */
     public function index()
     {
         if (!$this->checkToken()) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(401)->setJSON([
+                'status'  => false,
                 'message' => 'Unauthorized access'
             ]);
         }
 
-        // All roles allowed
         if (!$this->checkRole(['Admin', 'Accountant', 'Viewer'])) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'  => false,
                 'message' => 'Access denied'
             ]);
         }
 
         $model = new VendorModel();
-        return $this->response->setJSON($model->findAll());
+        return $this->response->setJSON([
+            'status' => true,
+            'data'   => $model->findAll()
+        ]);
     }
 
     /**
      * CREATE: Insert new vendor
      * URL: POST /vendors/create
+     * Roles: Admin, Accountant
      */
     public function create()
     {
         if (!$this->checkToken()) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(401)->setJSON([
+                'status'  => false,
                 'message' => 'Unauthorized access'
             ]);
         }
 
-        // Admin & Accountant only
         if (!$this->checkRole(['Admin', 'Accountant'])) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'  => false,
                 'message' => 'Access denied'
+            ]);
+        }
+
+        $requestData = $this->request->getJSON(true);
+
+        $data = [
+            'vendor_name'     => $requestData['vendor_name'] ?? null,
+            'contact_person' => $requestData['contact_person'] ?? null,
+            'phone'           => $requestData['phone'] ?? null,
+            'email'           => $requestData['email'] ?? null
+        ];
+
+        // Basic validation
+        if (empty($data['vendor_name'])) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => false,
+                'message' => 'Vendor name is required'
             ]);
         }
 
         $model = new VendorModel();
 
-        $data = [
-            'vendor_name'     => $this->request->getPost('vendor_name'),
-            'contact_person' => $this->request->getPost('contact_person'),
-            'phone'           => $this->request->getPost('phone'),
-            'email'           => $this->request->getPost('email')
-        ];
-
-        if ($model->insert($data)) {
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'message' => 'Vendor inserted successfully'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Insert failed',
+        if ($model->insert($data) === false) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => false,
                 'errors'  => $model->errors()
             ]);
         }
+
+        return $this->response->setJSON([
+            'status'    => true,
+            'message'   => 'Vendor created successfully',
+            'vendor_id' => $model->getInsertID()
+        ]);
     }
 
     /**
-     * UPDATE: Update existing vendor
+     * UPDATE: Update vendor
      * URL: POST /vendors/update/{id}
+     * Roles: Admin, Accountant
      */
     public function update($id)
     {
         if (!$this->checkToken()) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(401)->setJSON([
+                'status'  => false,
                 'message' => 'Unauthorized access'
             ]);
         }
 
-        // Admin & Accountant only
         if (!$this->checkRole(['Admin', 'Accountant'])) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'  => false,
                 'message' => 'Access denied'
             ]);
         }
 
         $model = new VendorModel();
 
-        $data = [
-            'vendor_name'     => $this->request->getPost('vendor_name'),
-            'contact_person' => $this->request->getPost('contact_person'),
-            'phone'           => $this->request->getPost('phone'),
-            'email'           => $this->request->getPost('email')
-        ];
-
-        if ($model->update($id, $data)) {
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'message' => 'Vendor updated successfully'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Update failed',
-                'errors'  => $model->errors()
+        if ($model->update($id, $this->request->getPost()) === false) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status' => false,
+                'errors' => $model->errors()
             ]);
         }
+
+        return $this->response->setJSON([
+            'status'  => true,
+            'message' => 'Vendor updated successfully'
+        ]);
     }
 
     /**
      * DELETE: Delete vendor
      * URL: GET /vendors/delete/{id}
+     * Roles: Admin
      */
     public function delete($id)
     {
         if (!$this->checkToken()) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(401)->setJSON([
+                'status'  => false,
                 'message' => 'Unauthorized access'
             ]);
         }
 
-        // Admin only
         if (!$this->checkRole(['Admin'])) {
-            return $this->response->setJSON([
-                'status'  => 'error',
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'  => false,
                 'message' => 'Access denied'
             ]);
         }
 
         $model = new VendorModel();
+        $model->delete($id);
 
-        if ($model->delete($id)) {
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'message' => 'Vendor deleted successfully'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Delete failed'
-            ]);
-        }
+        return $this->response->setJSON([
+            'status'  => true,
+            'message' => 'Vendor deleted successfully'
+        ]);
     }
 }
-=======
-<?php
-
-namespace App\Controllers;
-
-use App\Models\VendorModel;
-
-class VendorController extends BaseController
-{
-    /**
-     * READ: Fetch all vendors
-     * URL: GET /vendors
-     */
-    public function index()
-    {
-        $model = new VendorModel();
-        return $this->response->setJSON($model->findAll());
-    }
-
-    /**
-     * CREATE: Insert new vendor
-     * URL: POST /vendors/create
-     */
-    public function create()
-    {
-        $model = new VendorModel();
-
-        $data = [
-            'vendor_name'     => $this->request->getPost('vendor_name'),
-            'contact_person' => $this->request->getPost('contact_person'),
-            'phone'           => $this->request->getPost('phone'),
-            'email'           => $this->request->getPost('email')
-        ];
-
-        if ($model->insert($data)) {
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'message' => 'Vendor inserted successfully'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Insert failed',
-                'errors'  => $model->errors()
-            ]);
-        }
-    }
-
-    /**
-     * UPDATE: Update existing vendor
-     * URL: POST /vendors/update/{id}
-     */
-    public function update($id)
-    {
-        $model = new VendorModel();
-
-        $data = [
-            'vendor_name'     => $this->request->getPost('vendor_name'),
-            'contact_person' => $this->request->getPost('contact_person'),
-            'phone'           => $this->request->getPost('phone'),
-            'email'           => $this->request->getPost('email')
-        ];
-
-        if ($model->update($id, $data)) {
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'message' => 'Vendor updated successfully'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Update failed',
-                'errors'  => $model->errors()
-            ]);
-        }
-    }
-
-    /**
-     * DELETE: Delete vendor
-     * URL: GET /vendors/delete/{id}
-     */
-    public function delete($id)
-    {
-        $model = new VendorModel();
-
-        if ($model->delete($id)) {
-            return $this->response->setJSON([
-                'status'  => 'success',
-                'message' => 'Vendor deleted successfully'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Delete failed'
-            ]);
-        }
-    }
-}
->>>>>>> 98699a7f9426dba0803b665f6c55731e429988d3

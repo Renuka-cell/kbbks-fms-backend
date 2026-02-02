@@ -13,6 +13,8 @@ class UserModel extends Model
         'name',
         'email',
         'password',
-        'role'
+        'role',
+        'token'
     ];
+    protected $returnType = 'array';
 }
