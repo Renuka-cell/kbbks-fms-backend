@@ -6,11 +6,6 @@ use App\Models\VendorModel;
 
 class VendorController extends BaseController
 {
-    /**
-     * READ: Fetch all vendors
-     * URL: GET /vendors
-     * Roles: Admin, Accountant, Viewer
-     */
     public function index()
     {
         if (!$this->checkToken()) {
@@ -23,22 +18,18 @@ class VendorController extends BaseController
         if (!$this->checkRole(['Admin', 'Accountant', 'Viewer'])) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status'  => false,
-                'message' => 'Access denied'
+                'message' => 'Insufficient role permission'
             ]);
         }
 
         $model = new VendorModel();
+
         return $this->response->setJSON([
             'status' => true,
             'data'   => $model->findAll()
         ]);
     }
 
-    /**
-     * CREATE: Insert new vendor
-     * URL: POST /vendors/create
-     * Roles: Admin, Accountant
-     */
     public function create()
     {
         if (!$this->checkToken()) {
@@ -51,20 +42,12 @@ class VendorController extends BaseController
         if (!$this->checkRole(['Admin', 'Accountant'])) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status'  => false,
-                'message' => 'Access denied'
+                'message' => 'Only Admin or Accountant can create vendors'
             ]);
         }
 
-        $requestData = $this->request->getJSON(true);
+        $data = $this->request->getJSON(true);
 
-        $data = [
-            'vendor_name'     => $requestData['vendor_name'] ?? null,
-            'contact_person' => $requestData['contact_person'] ?? null,
-            'phone'           => $requestData['phone'] ?? null,
-            'email'           => $requestData['email'] ?? null
-        ];
-
-        // Basic validation
         if (empty($data['vendor_name'])) {
             return $this->response->setStatusCode(400)->setJSON([
                 'status'  => false,
@@ -74,10 +57,10 @@ class VendorController extends BaseController
 
         $model = new VendorModel();
 
-        if ($model->insert($data) === false) {
+        if (!$model->insert($data)) {
             return $this->response->setStatusCode(400)->setJSON([
-                'status'  => false,
-                'errors'  => $model->errors()
+                'status' => false,
+                'errors' => $model->errors()
             ]);
         }
 
@@ -88,11 +71,6 @@ class VendorController extends BaseController
         ]);
     }
 
-    /**
-     * UPDATE: Update vendor
-     * URL: POST /vendors/update/{id}
-     * Roles: Admin, Accountant
-     */
     public function update($id)
     {
         if (!$this->checkToken()) {
@@ -105,13 +83,29 @@ class VendorController extends BaseController
         if (!$this->checkRole(['Admin', 'Accountant'])) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status'  => false,
-                'message' => 'Access denied'
+                'message' => 'Only Admin or Accountant can update vendors'
+            ]);
+        }
+
+        $data = $this->request->getJSON(true);
+
+        if (empty($data)) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => false,
+                'message' => 'No data provided to update'
             ]);
         }
 
         $model = new VendorModel();
 
-        if ($model->update($id, $this->request->getPost()) === false) {
+        if (!$model->find($id)) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status'  => false,
+                'message' => 'Vendor not found'
+            ]);
+        }
+
+        if (!$model->update($id, $data)) {
             return $this->response->setStatusCode(400)->setJSON([
                 'status' => false,
                 'errors' => $model->errors()
@@ -124,11 +118,6 @@ class VendorController extends BaseController
         ]);
     }
 
-    /**
-     * DELETE: Delete vendor
-     * URL: GET /vendors/delete/{id}
-     * Roles: Admin
-     */
     public function delete($id)
     {
         if (!$this->checkToken()) {
@@ -141,7 +130,7 @@ class VendorController extends BaseController
         if (!$this->checkRole(['Admin'])) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status'  => false,
-                'message' => 'Access denied'
+                'message' => 'Only Admin can delete vendors'
             ]);
         }
 

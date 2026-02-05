@@ -25,7 +25,7 @@ abstract class BaseController extends Controller
     }
 
     /**
-     * Check token and load user
+     * Check token and load logged-in user
      */
     protected function checkToken(): bool
     {
@@ -48,18 +48,27 @@ abstract class BaseController extends Controller
             return false;
         }
 
-        // Save logged-in user for later use
+        // Store logged-in user
         $this->currentUser = $user;
 
         return true;
     }
 
     /**
-     * Role check using logged-in user
+     * Check role of logged-in user
      */
     protected function checkRole(array $allowedRoles): bool
     {
-        $role = $this->request->getHeaderLine('Role');
-        return in_array($role, $allowedRoles);
+        // Token must be validated first
+        if (!$this->currentUser) {
+            return false;
+        }
+
+        // Role must exist in user record
+        if (!isset($this->currentUser['role'])) {
+            return false;
+        }
+
+        return in_array($this->currentUser['role'], $allowedRoles);
     }
 }
