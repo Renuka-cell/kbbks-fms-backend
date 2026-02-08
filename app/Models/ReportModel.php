@@ -11,22 +11,41 @@ class ReportModel extends Model
      */
     public function getVendorOutstanding()
     {
-        $db = \Config\Database::connect();
+        return $this->db->query("
+            SELECT 
+                v.vendor_name,
+                IFNULL(SUM(b.bill_amount), 0) AS total_bill,
+                IFNULL(SUM(p.amount_paid), 0) AS paid_amount,
+                (IFNULL(SUM(b.bill_amount), 0) - IFNULL(SUM(p.amount_paid), 0)) AS outstanding_amount
+            FROM vendors v
+            LEFT JOIN bills b ON b.vendor_id = v.vendor_id
+            LEFT JOIN payments p ON p.bill_id = b.bill_id
+            GROUP BY v.vendor_id
+        ")->getResultArray();
+    }
 
-        $builder = $db->table('vendors v');
+    /**
+     * Monthly Expense Report
+     */
+    public function getMonthlyExpense()
+    {
+        return $this->db->table('expenses')
+            ->select("DATE_FORMAT(expense_date, '%Y-%m') AS month, SUM(amount) AS total_expense")
+            ->groupBy("DATE_FORMAT(expense_date, '%Y-%m')")
+            ->orderBy("month", "DESC")
+            ->get()
+            ->getResultArray();
+    }
 
-        $builder->select("
-            v.vendor_name,
-            IFNULL(SUM(b.bill_amount), 0) AS total_bill,
-            IFNULL(SUM(p.amount_paid), 0) AS paid_amount,
-            (IFNULL(SUM(b.bill_amount), 0) - IFNULL(SUM(p.amount_paid), 0)) AS outstanding_amount
-        ");
-
-        $builder->join('bills b', 'b.vendor_id = v.vendor_id', 'left');
-        $builder->join('payments p', 'p.bill_id = b.bill_id', 'left');
-
-        $builder->groupBy('v.vendor_id');
-
-        return $builder->get()->getResultArray();
+    /**
+     * Income vs Expense Report (optional)
+     */
+    public function getIncomeExpense()
+    {
+        return $this->db->query("
+            SELECT 'Income' AS type, SUM(amount) AS total FROM invoices
+            UNION ALL
+            SELECT 'Expense' AS type, SUM(amount) AS total FROM expenses
+        ")->getResultArray();
     }
 }

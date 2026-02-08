@@ -10,27 +10,37 @@ class BillController extends BaseController
     /**
      * CREATE BILL
      * POST /bills/create
+     * Access: Admin, Accountant
      */
     public function create()
     {
-        // Auth check
+        // 1️⃣ Auth check
         if (!$this->checkToken()) {
             return $this->response->setStatusCode(401)->setJSON([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Unauthorized'
             ]);
         }
 
+        // 2️⃣ Role check (IMPORTANT FIX)
+        if (!$this->checkRole(['Admin', 'Accountant'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'  => false,
+                'message' => 'Only Admin and Accountant can create bills'
+            ]);
+        }
+
+        // 3️⃣ Read JSON payload
         $data = $this->request->getJSON(true);
 
         if (!$data) {
             return $this->response->setStatusCode(400)->setJSON([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Invalid JSON'
             ]);
         }
 
-        // Required fields
+        // 4️⃣ Required fields validation
         if (
             empty($data['vendor_id']) ||
             empty($data['bill_number']) ||
@@ -38,23 +48,23 @@ class BillController extends BaseController
             empty($data['bill_amount'])
         ) {
             return $this->response->setStatusCode(400)->setJSON([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Missing required fields'
             ]);
         }
 
-        // ✅ Validate vendor existence
+        // 5️⃣ Validate vendor existence
         $vendorModel = new VendorModel();
         if (!$vendorModel->find($data['vendor_id'])) {
             return $this->response->setStatusCode(400)->setJSON([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Invalid vendor_id'
             ]);
         }
 
+        // 6️⃣ Insert bill
         $billModel = new BillModel();
 
-        // Insert bill
         if (!$billModel->insert([
             'vendor_id'   => $data['vendor_id'],
             'bill_number' => $data['bill_number'],
@@ -63,11 +73,12 @@ class BillController extends BaseController
             'status'      => 'UNPAID'
         ])) {
             return $this->response->setStatusCode(500)->setJSON([
-                'status' => false,
-                'errors' => $billModel->errors()
+                'status'  => false,
+                'errors'  => $billModel->errors()
             ]);
         }
 
+        // 7️⃣ Success response (UNCHANGED)
         return $this->response->setJSON([
             'status'  => true,
             'message' => 'Bill created successfully',
