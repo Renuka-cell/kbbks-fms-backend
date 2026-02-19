@@ -6,6 +6,7 @@ use CodeIgniter\Model;
 
 class ReportModel extends Model
 {
+
     /**
      * Vendor Outstanding Report
      */
@@ -38,14 +39,131 @@ class ReportModel extends Model
     }
 
     /**
-     * Income vs Expense Report (optional)
+     * Income vs Expense Report
      */
     public function getIncomeExpense()
     {
         return $this->db->query("
-            SELECT 'Income' AS type, SUM(amount) AS total FROM invoices
+            SELECT 'Income' AS type, IFNULL(SUM(amount),0) AS total FROM invoices
             UNION ALL
-            SELECT 'Expense' AS type, SUM(amount) AS total FROM expenses
+            SELECT 'Expense' AS type, IFNULL(SUM(amount),0) AS total FROM expenses
         ")->getResultArray();
     }
+
+    /**
+     * Vendor Financial Summary (With Optional Filters)
+     */
+    public function getVendorSummary($vendor_id, $year = null, $month = null)
+    {
+        // 1️⃣ Vendor Info
+        $vendor = $this->db->table('vendors')
+            ->where('vendor_id', $vendor_id)
+            ->get()
+            ->getRowArray();
+
+        if (!$vendor) {
+            return null;
+        }
+
+        // ===============================
+        // Expense Builder
+        // ===============================
+        $expenseBuilder = $this->db->table('expenses')
+            ->where('vendor_id', $vendor_id);
+
+        if (!empty($year)) {
+            $expenseBuilder->where('YEAR(expense_date)', $year);
+        }
+
+        if (!empty($month)) {
+            $expenseBuilder->where('MONTH(expense_date)', $month);
+        }
+
+        $totalExpense = $expenseBuilder
+            ->selectSum('amount')
+            ->get()
+            ->getRow()
+            ->amount ?? 0;
+
+        // ===============================
+        // Bills Builder
+        // ===============================
+        $billBuilder = $this->db->table('bills')
+            ->where('vendor_id', $vendor_id);
+
+        if (!empty($year)) {
+            $billBuilder->where('YEAR(bill_date)', $year);
+        }
+
+        if (!empty($month)) {
+            $billBuilder->where('MONTH(bill_date)', $month);
+        }
+
+        $totalBills = $billBuilder->countAllResults(false);
+
+        $totalBillAmount = $billBuilder
+            ->selectSum('bill_amount')
+            ->get()
+            ->getRow()
+            ->bill_amount ?? 0;
+
+        // ===============================
+        // Payment Builder
+        // ===============================
+        $paymentBuilder = $this->db->table('payments')
+            ->selectSum('amount_paid')
+            ->join('bills', 'payments.bill_id = bills.bill_id')
+            ->where('bills.vendor_id', $vendor_id);
+
+        if (!empty($year)) {
+            $paymentBuilder->where('YEAR(payment_date)', $year);
+        }
+
+        if (!empty($month)) {
+            $paymentBuilder->where('MONTH(payment_date)', $month);
+        }
+
+        $totalPayment = $paymentBuilder
+            ->get()
+            ->getRow()
+            ->amount_paid ?? 0;
+
+        $outstanding = $totalBillAmount - $totalPayment;
+
+        // ===============================
+        // Monthly Trend
+        // ===============================
+        $monthlyExpense = $this->db->query("
+            SELECT DATE_FORMAT(expense_date, '%Y-%m') as month,
+                   SUM(amount) as total
+            FROM expenses
+            WHERE vendor_id = ?
+            GROUP BY month
+            ORDER BY month ASC
+        ", [$vendor_id])->getResultArray();
+
+        $monthlyPayment = $this->db->query("
+            SELECT DATE_FORMAT(payment_date, '%Y-%m') as month,
+                   SUM(amount_paid) as total
+            FROM payments
+            JOIN bills ON payments.bill_id = bills.bill_id
+            WHERE bills.vendor_id = ?
+            GROUP BY month
+            ORDER BY month ASC
+        ", [$vendor_id])->getResultArray();
+
+        return [
+            'vendor_id' => $vendor_id,
+            'vendor_name' => $vendor['vendor_name'],
+            'year_filter' => $year,
+            'month_filter' => $month,
+            'total_expense' => (float)$totalExpense,
+            'total_payment' => (float)$totalPayment,
+            'outstanding_amount' => (float)$outstanding,
+            'total_bills' => (int)$totalBills,
+            'monthly_expense_trend' => $monthlyExpense,
+            'monthly_payment_trend' => $monthlyPayment
+        ];
+    }
+
 }

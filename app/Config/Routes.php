@@ -46,7 +46,7 @@ $routes->group('auth', function ($routes) {
 $routes->group('vendors', function ($routes) {
 
     $routes->get('/', 'VendorController::index');          // List vendors
-    $routes->post('create', 'VendorController::create');  // Create vendor
+    $routes->post('create', 'VendorController::create');   // Create vendor
     $routes->post('update/(:num)', 'VendorController::update/$1');
     $routes->get('delete/(:num)', 'VendorController::delete/$1');
 
@@ -59,8 +59,8 @@ $routes->group('vendors', function ($routes) {
 */
 $routes->group('bills', function ($routes) {
 
-    $routes->post('create', 'BillController::create');    // Create bill
-    // $routes->get('/', 'BillController::index');        // (Optional) list bills
+    $routes->post('create', 'BillController::create');     // Create bill
+    // $routes->get('/', 'BillController::index');         // (Optional) list bills
 
 });
 
@@ -71,8 +71,8 @@ $routes->group('bills', function ($routes) {
 */
 $routes->group('expenses', function ($routes) {
 
-    $routes->post('create', 'ExpenseController::create'); // Add expense
-    // $routes->get('/', 'ExpenseController::index');     // (Optional) list expenses
+    $routes->post('create', 'ExpenseController::create');  // Add expense
+    // $routes->get('/', 'ExpenseController::index');      // (Optional) list expenses
 
 });
 
@@ -83,8 +83,8 @@ $routes->group('expenses', function ($routes) {
 */
 $routes->group('payments', function ($routes) {
 
-    $routes->post('create', 'PaymentController::create'); // Add payment
-    // $routes->get('/', 'PaymentController::index');     // (Optional) list payments
+    $routes->post('create', 'PaymentController::create');  // Add payment
+    // $routes->get('/', 'PaymentController::index');      // (Optional) list payments
 
 });
 
@@ -98,8 +98,13 @@ $routes->group('reports', function ($routes) {
     // ✅ Vendor Outstanding Report
     $routes->get('vendor-outstanding', 'ReportController::vendorOutstanding');
 
-    // Other reports
+    // Monthly Expense Report
     $routes->get('monthly-expense', 'ReportController::monthlyExpense');
+
+    // Income vs Expense Report
     $routes->get('income-expense', 'ReportController::incomeExpense');
+
+    // ✅ NEW Vendor Financial Summary (Vendor Master Analytics)
+    $routes->get('vendor-summary/(:num)', 'ReportController::vendorSummary/$1');
 
 });
