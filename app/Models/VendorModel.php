@@ -17,7 +17,8 @@ class VendorModel extends Model
         'vendor_name',
         'contact_person',
         'phone',
-        'email'
+        'email',
+        'logo' // ✅ NEW FIELD ADDED (Vendor Logo Support)
     ];
 
     // IMPORTANT: Disable timestamps (fixes 500 error)
@@ -28,6 +29,7 @@ class VendorModel extends Model
         'vendor_name' => 'required|min_length[3]',
         'phone'       => 'permit_empty|numeric|min_length[10]|max_length[15]',
         'email'       => 'permit_empty|valid_email'
+        // Logo validation handled in controller (file upload validation)
     ];
 
     protected $validationMessages = [
