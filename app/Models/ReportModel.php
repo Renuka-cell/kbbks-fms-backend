@@ -55,7 +55,6 @@ class ReportModel extends Model
      */
     public function getVendorSummary($vendor_id, $year = null, $month = null)
     {
-        // 1️⃣ Vendor Info
         $vendor = $this->db->table('vendors')
             ->where('vendor_id', $vendor_id)
             ->get()
@@ -65,9 +64,7 @@ class ReportModel extends Model
             return null;
         }
 
-        // ===============================
         // Expense Builder
-        // ===============================
         $expenseBuilder = $this->db->table('expenses')
             ->where('vendor_id', $vendor_id);
 
@@ -85,9 +82,7 @@ class ReportModel extends Model
             ->getRow()
             ->amount ?? 0;
 
-        // ===============================
         // Bills Builder
-        // ===============================
         $billBuilder = $this->db->table('bills')
             ->where('vendor_id', $vendor_id);
 
@@ -107,9 +102,7 @@ class ReportModel extends Model
             ->getRow()
             ->bill_amount ?? 0;
 
-        // ===============================
         // Payment Builder
-        // ===============================
         $paymentBuilder = $this->db->table('payments')
             ->selectSum('amount_paid')
             ->join('bills', 'payments.bill_id = bills.bill_id')
@@ -130,9 +123,7 @@ class ReportModel extends Model
 
         $outstanding = $totalBillAmount - $totalPayment;
 
-        // ===============================
         // Monthly Trend
-        // ===============================
         $monthlyExpense = $this->db->query("
             SELECT DATE_FORMAT(expense_date, '%Y-%m') as month,
                    SUM(amount) as total
@@ -166,4 +157,82 @@ class ReportModel extends Model
         ];
     }
 
+    /* ============================================================
+       🔵 NEW DASHBOARD MODEL METHODS
+    ============================================================ */
+
+    /**
+     * Dashboard KPI Summary
+     */
+    public function getDashboardSummary()
+    {
+        $totalIncome = $this->db->table('payments')
+            ->selectSum('amount_paid')
+            ->get()
+            ->getRow()
+            ->amount_paid ?? 0;
+
+        $totalExpense = $this->db->table('expenses')
+            ->selectSum('amount')
+            ->get()
+            ->getRow()
+            ->amount ?? 0;
+
+        $totalVendors = $this->db->table('vendors')
+            ->countAllResults();
+
+        $totalOutstanding = $this->db->query("
+            SELECT 
+                (IFNULL(SUM(b.bill_amount),0) - IFNULL(SUM(p.amount_paid),0)) AS outstanding
+            FROM bills b
+            LEFT JOIN payments p ON p.bill_id = b.bill_id
+        ")->getRow()->outstanding ?? 0;
+
+        return [
+            'total_income' => (float)$totalIncome,
+            'total_expense' => (float)$totalExpense,
+            'net_balance' => (float)($totalIncome - $totalExpense),
+            'total_vendors' => (int)$totalVendors,
+            'total_outstanding' => (float)$totalOutstanding
+        ];
+    }
+
+    /**
+     * Monthly Income vs Expense Trend
+     */
+    public function getDashboardTrend()
+    {
+        $monthlyIncome = $this->db->query("
+            SELECT DATE_FORMAT(payment_date, '%Y-%m') as month,
+                   SUM(amount_paid) as total
+            FROM payments
+            GROUP BY month
+            ORDER BY month ASC
+        ")->getResultArray();
+
+        $monthlyExpense = $this->db->query("
+            SELECT DATE_FORMAT(expense_date, '%Y-%m') as month,
+                   SUM(amount) as total
+            FROM expenses
+            GROUP BY month
+            ORDER BY month ASC
+        ")->getResultArray();
+
+        return [
+            'monthly_income' => $monthlyIncome,
+            'monthly_expense' => $monthlyExpense
+        ];
+    }
+
+    /**
+     * Expense Category Distribution
+     */
+    public function getExpenseCategoryDistribution()
+    {
+        return $this->db->table('expenses')
+            ->select('category, SUM(amount) as total')
+            ->groupBy('category')
+            ->get()
+            ->getResultArray();
+    }
 }

@@ -104,7 +104,20 @@ $routes->group('reports', function ($routes) {
     // Income vs Expense Report
     $routes->get('income-expense', 'ReportController::incomeExpense');
 
-    // ✅ NEW Vendor Financial Summary (Vendor Master Analytics)
+    // ✅ Vendor Financial Summary (Vendor Master Analytics)
     $routes->get('vendor-summary/(:num)', 'ReportController::vendorSummary/$1');
+
+    /* ============================================================
+       🔵 NEW DASHBOARD ANALYTICS ROUTES
+    ============================================================ */
+
+    // 🔵 Dashboard KPI Summary
+    $routes->get('dashboard-summary', 'ReportController::dashboardSummary');
+
+    // 🔵 Monthly Income vs Expense Trend
+    $routes->get('dashboard-trend', 'ReportController::dashboardTrend');
+
+    // 🔵 Expense Category Distribution
+    $routes->get('expense-category-distribution', 'ReportController::expenseCategoryDistribution');
 
 });
